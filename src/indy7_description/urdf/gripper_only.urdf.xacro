@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<robot name="mplm1630_gripper_only" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find indy7_description)/urdf/custom_gripper.xacro"/>
+
+  <!-- RViz에서 그리퍼만 보기 위한 임시 기준 링크 -->
+  <link name="world"/>
+
+  <!-- custom_gripper macro 호출 -->
+  <xacro:custom_gripper parent="world" prefix="" />
+
+</robot>

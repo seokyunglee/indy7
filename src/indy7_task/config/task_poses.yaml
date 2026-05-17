@@ -1,0 +1,37 @@
+poses:
+  ready:
+    frame_id: "link0"
+    position: [0.30, 0.00, 0.45]
+    orientation: [0.0, 1.0, 0.0, 0.0]
+
+  pre_pick:
+    frame_id: "link0"
+    position: [0.40, 0.00, 0.30]
+    orientation: [0.0, 1.0, 0.0, 0.0]
+
+  pick:
+    frame_id: "link0"
+    position: [0.40, 0.00, 0.18]
+    orientation: [0.0, 1.0, 0.0, 0.0]
+
+  lift:
+    frame_id: "link0"
+    position: [0.40, 0.00, 0.35]
+    orientation: [0.0, 1.0, 0.0, 0.0]
+
+  pre_place:
+    frame_id: "link0"
+    position: [0.30, 0.25, 0.35]
+    orientation: [0.0, 1.0, 0.0, 0.0]
+
+  place:
+    frame_id: "link0"
+    position: [0.30, 0.25, 0.20]
+    orientation: [0.0, 1.0, 0.0, 0.0]
+
+task:
+  step_wait_sec: 0.5
+  auto_start: true
+  pick_above_z: 0.30
+  lift_z: 0.35
+  place_above_z: 0.35

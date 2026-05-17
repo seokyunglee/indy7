@@ -1,0 +1,238 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="custom_gripper" params="parent prefix:=''">
+
+    <xacro:property name="finger_y" value="0.008"/>
+
+    <link name="${prefix}gripper_base_link">
+
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh
+            filename="package://indy7_description/meshes/gripper/visual/mplm_body.stl"
+            scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="mplm_body_gray">
+          <color rgba="0.45 0.45 0.45 1.0"/>
+        </material>
+      </visual>
+      
+
+      
+      <collision name="${prefix}gripper_base_collision">
+        <origin xyz="0 0 0.022" rpy="0 0 0"/>
+        <geometry>
+            <box size="0.044 0.060 0.044"/>
+        </geometry>
+      </collision>
+
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.263"/>
+        <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+                 iyy="0.001" iyz="0.0"
+                 izz="0.001"/>
+      </inertial>
+
+    </link>
+
+
+    <joint name="${prefix}gripper_base_fixed_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${prefix}gripper_base_link"/>
+
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+
+    <link name="${prefix}left_finger_link">
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.006 0.006 0.006"/>
+        </geometry>
+        <material name="jaw_blue">
+          <color rgba="0.1 0.2 0.8 1.0"/>
+        </material>
+      </visual>
+
+      <collision name="${prefix}left_finger_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+            <box size="0.006 0.006 0.006"/>
+        </geometry>
+      </collision>
+
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.03"/>
+        <inertia ixx="0.00005" ixy="0.0" ixz="0.0"
+                 iyy="0.00005" iyz="0.0"
+                 izz="0.00005"/>
+      </inertial>
+
+    </link>
+
+    <joint name="${prefix}left_finger_joint" type="prismatic">
+      <parent link="${prefix}gripper_base_link"/>
+      <child link="${prefix}left_finger_link"/>
+
+      <origin xyz="0 -${finger_y} 0.044" rpy="0 0 0"/>
+
+      <axis xyz="0 -1 0"/>
+      <limit lower="0.0" upper="0.015" effort="20.0" velocity="0.05"/>
+    </joint>
+
+
+    <link name="${prefix}left_tooltip_link">
+
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh
+            filename="package://indy7_description/meshes/gripper/visual/Left_tooltip.stl"
+            scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="tooltip_gray">
+          <color rgba="0.75 0.75 0.75 1.0"/>
+        </material>
+      </visual>
+      
+
+
+      <collision name="${prefix}left_tooltip_body_collision">
+        <origin xyz="0 -0.014 0.023" rpy="0 0 0"/>
+        <geometry>
+            <box size="0.0400 0.007 0.0460"/>
+        </geometry>
+      </collision>
+
+      <collision name="${prefix}left_tooltip_tooth_collision">
+        <origin xyz="0 0 0.044" rpy="0 0 0"/>
+        <geometry>
+            <box size="0.0400 0.015 0.0052"/>
+        </geometry>
+      </collision>
+
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.02"/>
+        <inertia ixx="0.00002" ixy="0.0" ixz="0.0"
+                 iyy="0.00002" iyz="0.0"
+                 izz="0.00002"/>
+      </inertial>
+
+    </link>
+
+    <joint name="${prefix}left_tooltip_fixed_joint" type="fixed">
+      <parent link="${prefix}left_finger_link"/>
+      <child link="${prefix}left_tooltip_link"/>
+
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+
+    <link name="${prefix}right_finger_link">
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.006 0.006 0.006"/>
+        </geometry>
+        <material name="jaw_blue">
+          <color rgba="0.1 0.2 0.8 1.0"/>
+        </material>
+      </visual>
+
+      <collision name="${prefix}right_finger_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+            <box size="0.006 0.006 0.006"/>
+        </geometry>
+      </collision>
+
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.03"/>
+        <inertia ixx="0.00005" ixy="0.0" ixz="0.0"
+                 iyy="0.00005" iyz="0.0"
+                 izz="0.00005"/>
+      </inertial>
+
+    </link>
+
+    <joint name="${prefix}right_finger_joint" type="prismatic">
+      <parent link="${prefix}gripper_base_link"/>
+      <child link="${prefix}right_finger_link"/>
+
+      <origin xyz="0 ${finger_y} 0.044" rpy="0 0 0"/>
+
+      <axis xyz="0 1 0"/>
+      <limit lower="0.0" upper="0.015" effort="20.0" velocity="0.05"/>
+    </joint>
+
+
+    <link name="${prefix}right_tooltip_link">
+
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh
+            filename="package://indy7_description/meshes/gripper/visual/Right_tooltip.stl"
+            scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="tooltip_gray">
+          <color rgba="0.75 0.75 0.75 1.0"/>
+        </material>
+      </visual>
+      
+
+      <collision name="${prefix}right_tooltip_body_collision">
+        <origin xyz="0 0.014 0.023" rpy="0 0 0"/>
+        <geometry>
+            <box size="0.0400 0.007 0.0460"/>
+        </geometry>
+      </collision>
+
+      <collision name="${prefix}right_tooltip_tooth_collision">
+        <origin xyz="0 0 0.044" rpy="0 0 0"/>
+        <geometry>
+            <box size="0.0400 0.015 0.0052"/>
+        </geometry>
+      </collision>
+
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.02"/>
+        <inertia ixx="0.00002" ixy="0.0" ixz="0.0"
+                 iyy="0.00002" iyz="0.0"
+                 izz="0.00002"/>
+      </inertial>
+
+    </link>
+
+    <joint name="${prefix}right_tooltip_fixed_joint" type="fixed">
+      <parent link="${prefix}right_finger_link"/>
+      <child link="${prefix}right_tooltip_link"/>
+
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+
+    <link name="${prefix}gripper_tcp"/>
+
+    <joint name="${prefix}gripper_tcp_joint" type="fixed">
+      <parent link="${prefix}gripper_base_link"/>
+      <child link="${prefix}gripper_tcp"/>
+
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+  </xacro:macro>
+</robot>

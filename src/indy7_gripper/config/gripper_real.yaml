@@ -1,0 +1,13 @@
+indy7_gripper_node:
+  ros__parameters:
+    mode: "real"
+
+    robot_ip: "166.104.234.72"
+    port_name: "C"
+
+    open_state: "HIGH_PNP"
+    close_state: "LOW_PNP"
+
+    settle_sec: 0.5
+
+    model: "MPLM1630"

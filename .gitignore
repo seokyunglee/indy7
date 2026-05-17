@@ -1,0 +1,12 @@
+# ROS2 build artifacts
+build/
+install/
+log/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Editor / OS junk
+.vscode/
+.DS_Store

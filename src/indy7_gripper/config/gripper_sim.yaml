@@ -1,0 +1,17 @@
+indy7_gripper_node:
+  ros__parameters:
+    mode: "sim"
+
+    controller_topic: "/gripper_controller/joint_trajectory"
+
+    left_joint: "left_finger_joint"
+    right_joint: "right_finger_joint"
+
+    open_width: 0.015
+    half_width: 0.0075
+    close_width: 0.0
+
+    motion_time_sec: 1.0
+
+    left_sign: 1.0
+    right_sign: 1.0
