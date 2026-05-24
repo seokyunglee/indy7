@@ -1,6 +1,17 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 
+"""
+Indy7 RViz display launch file.
+
+실행 예시:
+  # Indy7 + gripper 모델을 RViz에서 확인
+  ros2 launch indy7_description indy_display.launch.py
+
+  # Indy Eye 옵션을 켜고 확인
+  ros2 launch indy7_description indy_display.launch.py indy_eye:=true
+"""
+
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 from launch import LaunchDescription

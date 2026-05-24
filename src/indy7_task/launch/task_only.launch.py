@@ -1,3 +1,17 @@
+"""
+Indy7 task-only launch file.
+
+실행 예시:
+  # 기본 task node 자동 실행
+  ros2 launch indy7_task task_only.launch.py
+
+  # 한 단계씩 SPACE로 확인하는 servo task
+  ros2 launch indy7_task task_only.launch.py task_executable:=task_node_servo
+
+  # 실물 첫 테스트처럼 속도/가속도를 낮춰 실행
+  ros2 launch indy7_task task_only.launch.py task_executable:=task_node_servo max_velocity:=0.05 max_acceleration:=0.05
+"""
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
@@ -21,6 +35,11 @@ def generate_launch_description():
     num_planning_attempts = LaunchConfiguration("num_planning_attempts")
     position_tolerance = LaunchConfiguration("position_tolerance")
     orientation_tolerance = LaunchConfiguration("orientation_tolerance")
+    use_planning_scene = LaunchConfiguration("use_planning_scene")
+    clear_scene_on_start = LaunchConfiguration("clear_scene_on_start")
+    pick_shelf_collision_id = LaunchConfiguration("pick_shelf_collision_id")
+    pick_shelf_top_center = LaunchConfiguration("pick_shelf_top_center")
+    pick_shelf_dimensions = LaunchConfiguration("pick_shelf_dimensions")
     gripper_open_service = LaunchConfiguration("gripper_open_service")
     gripper_close_service = LaunchConfiguration("gripper_close_service")
     gripper_state_service = LaunchConfiguration("gripper_state_service")
@@ -58,6 +77,22 @@ def generate_launch_description():
         DeclareLaunchArgument("num_planning_attempts", default_value="5"),
         DeclareLaunchArgument("position_tolerance", default_value="0.01"),
         DeclareLaunchArgument("orientation_tolerance", default_value="0.01"),
+        DeclareLaunchArgument("use_planning_scene", default_value="true"),
+        DeclareLaunchArgument("clear_scene_on_start", default_value="true"),
+        DeclareLaunchArgument(
+            "pick_shelf_collision_id",
+            default_value="pick_shelf",
+        ),
+        DeclareLaunchArgument(
+            "pick_shelf_top_center",
+            default_value="[0.65, 0.0, 0.16]",
+            description="Pick shelf top center in scene frame, meters.",
+        ),
+        DeclareLaunchArgument(
+            "pick_shelf_dimensions",
+            default_value="[0.32, 0.30, 0.05]",
+            description="Pick shelf collision box size [x, y, z], meters.",
+        ),
         DeclareLaunchArgument(
             "gripper_open_service",
             default_value="/gripper/open",
@@ -112,6 +147,17 @@ def generate_launch_description():
                         orientation_tolerance,
                         value_type=float,
                     ),
+                    "use_planning_scene": ParameterValue(
+                        use_planning_scene,
+                        value_type=bool,
+                    ),
+                    "clear_scene_on_start": ParameterValue(
+                        clear_scene_on_start,
+                        value_type=bool,
+                    ),
+                    "pick_shelf_collision_id": pick_shelf_collision_id,
+                    "pick_shelf_top_center": pick_shelf_top_center,
+                    "pick_shelf_dimensions": pick_shelf_dimensions,
                     "gripper_open_service": gripper_open_service,
                     "gripper_close_service": gripper_close_service,
                     "gripper_state_service": gripper_state_service,

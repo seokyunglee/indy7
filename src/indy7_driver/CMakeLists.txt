@@ -26,6 +26,7 @@ install(DIRECTORY
 
 install(PROGRAMS
   ${PROJECT_NAME}/indy_driver.py
+  ${PROJECT_NAME}/indy_status_node.py
   ${PROJECT_NAME}/servo_joy_input.py
   ${PROJECT_NAME}/servo_keyboard_input.py
   ${PROJECT_NAME}/indy_define.py

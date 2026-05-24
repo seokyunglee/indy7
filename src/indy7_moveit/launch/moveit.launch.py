@@ -1,9 +1,24 @@
+"""
+Indy7 MoveIt-only launch file.
+
+실행 예시:
+  # MoveIt/RViz만 실행. Gazebo나 실물 driver는 별도로 먼저 켜져 있어야 한다.
+  ros2 launch indy7_moveit moveit.launch.py
+
+  # Gazebo와 같이 쓸 때는 simulation time과 gripper description을 켠다.
+  ros2 launch indy7_moveit moveit.launch.py use_sim_time:=true use_gripper:=true
+
+  # MoveIt Servo mode
+  ros2 launch indy7_moveit moveit.launch.py servo_mode:=true
+"""
+
 # import os
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.conditions import IfCondition
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 from indy7_moveit.launch_common import load_yaml
 from launch_ros.descriptions import ComposableNode
@@ -47,7 +62,9 @@ def launch_setup(context, *args, **kwargs):
             use_gripper,
         ]
     )
-    robot_description = {"robot_description": robot_description_content}
+    robot_description = {
+        "robot_description": ParameterValue(robot_description_content, value_type=str)
+    }
 
     # MoveIt Configuration
     robot_description_semantic_content = Command(

@@ -1,3 +1,14 @@
+"""
+Indy7 real robot driver bringup launch file.
+
+실행 예시:
+  # 실물 Indy7 driver + robot_state_publisher + RViz
+  ros2 launch indy7_driver indy_bringup.launch.py indy_ip:=166.104.234.72 indy_type:=indy7
+
+  # RViz 없이 driver만 확인
+  ros2 launch indy7_driver indy_bringup.launch.py indy_ip:=166.104.234.72 indy_type:=indy7 launch_rviz:=false
+"""
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction, RegisterEventHandler
 from launch.event_handlers import OnProcessExit

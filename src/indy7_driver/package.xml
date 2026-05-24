@@ -12,6 +12,7 @@
 
   <depend>action_msgs</depend>
   <depend>rclpy</depend>
+  <depend>std_srvs</depend>
   <depend>control_msgs</depend>
   <depend>trajectory_msgs</depend>
   <depend>indy7_interfaces</depend>

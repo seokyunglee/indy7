@@ -1,6 +1,14 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+"""
+Gripper RViz display launch file.
+
+실행 예시:
+  # 그리퍼 단독 모델을 RViz에서 확인
+  ros2 launch indy7_description gripper_display.launch.py
+"""
+
 from launch import LaunchDescription
 from launch.substitutions import Command, PathJoinSubstitution
 from launch_ros.actions import Node

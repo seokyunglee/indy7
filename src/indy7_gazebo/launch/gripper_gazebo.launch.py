@@ -1,3 +1,11 @@
+"""
+Gripper-only Gazebo launch file.
+
+실행 예시:
+  # 그리퍼 단독 Gazebo 모델 확인
+  ros2 launch indy7_gazebo gripper_gazebo.launch.py
+"""
+
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource

@@ -1,3 +1,24 @@
+"""
+Indy7 gripper launch file.
+
+실행 예시:
+  # Gazebo/RViz 시뮬레이션 gripper backend
+  ros2 launch indy7_gripper gripper.launch.py mode:=sim
+
+  # 실물 MPLM1630 gripper backend
+  ros2 launch indy7_gripper gripper.launch.py mode:=real robot_ip:=166.104.234.72
+
+터미널에서 gripper 서비스 테스트:
+  ros2 service call /gripper/open std_srvs/srv/Trigger "{}"
+  ros2 service call /gripper/close std_srvs/srv/Trigger "{}"
+  ros2 service call /gripper/half_open std_srvs/srv/Trigger "{}"
+  ros2 service call /gripper/state std_srvs/srv/Trigger "{}"
+
+테스트 클라이언트:
+  ros2 run indy7_gripper gripper_client_test.py open
+  ros2 run indy7_gripper gripper_client_test.py close
+"""
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration

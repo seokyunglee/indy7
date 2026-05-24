@@ -1,4 +1,21 @@
 #!/usr/bin/env python3
+"""
+Indy7 gripper service node.
+
+이 파일이 실제 그리퍼 제어 서비스를 제공하는 서버다.
+task 쪽의 GripperClient는 아래 서비스를 호출만 하고, 실제 sim/real 제어는
+여기서 처리한다.
+
+터미널 테스트:
+  ros2 service call /gripper/open std_srvs/srv/Trigger "{}"
+  ros2 service call /gripper/close std_srvs/srv/Trigger "{}"
+  ros2 service call /gripper/half_open std_srvs/srv/Trigger "{}"
+  ros2 service call /gripper/state std_srvs/srv/Trigger "{}"
+
+또는 테스트 클라이언트:
+  ros2 run indy7_gripper gripper_client_test.py open
+  ros2 run indy7_gripper gripper_client_test.py close
+"""
 
 from __future__ import annotations
 
@@ -15,6 +32,12 @@ from builtin_interfaces.msg import Duration
 
 
 class SimGripperBackend:
+    """Gazebo/RViz 시뮬레이션용 그리퍼 backend.
+
+    /gripper/* 서비스가 들어오면 gripper controller topic으로
+    JointTrajectory를 발행해 손가락 joint 목표 위치를 보낸다.
+    """
+
     def __init__(self, node: Node):
         self.node = node
 
@@ -47,6 +70,7 @@ class SimGripperBackend:
         )
 
     def _publish_width(self, width: float) -> str:
+        """목표 gripper width를 joint trajectory 명령으로 변환해 발행한다."""
         width = max(self.close_width, min(float(width), self.open_width))
 
         msg = JointTrajectory()
@@ -86,6 +110,12 @@ class SimGripperBackend:
 
 
 class RealGripperBackend:
+    """실물 MPLM1630 그리퍼용 backend.
+
+    Neuromeka IndyDCP3 API로 endtool DO를 제어한다.
+    open/close 상태 이름은 launch/config 파라미터에서 바꿀 수 있다.
+    """
+
     def __init__(self, node: Node):
         self.node = node
 
@@ -128,6 +158,7 @@ class RealGripperBackend:
         )
 
     def _write_state(self, state_value) -> str:
+        """Indy controller의 endtool DO에 open/close 신호를 쓴다."""
         with self.lock:
             before = self.indy.get_endtool_do()
             result = self.indy.set_endtool_do([(self.port_name, [state_value])])
@@ -156,6 +187,8 @@ class RealGripperBackend:
 
 
 class Indy7GripperNode(Node):
+    """그리퍼 서비스를 등록하고 sim/real backend로 명령을 넘기는 ROS2 노드."""
+
     def __init__(self):
         super().__init__("indy7_gripper_node")
 
@@ -199,10 +232,10 @@ class Indy7GripperNode(Node):
         )
 
     def _declare_parameters(self):
-        # Common
+        # 공통 파라미터: sim이면 JointTrajectory, real이면 IndyDCP3 backend를 쓴다.
         self.declare_parameter("mode", "sim")
 
-        # Sim parameters
+        # 시뮬레이션 파라미터: controller topic과 손가락 joint 이름/목표 폭.
         self.declare_parameter("controller_topic", "/gripper_controller/joint_trajectory")
         self.declare_parameter("left_joint", "left_finger_joint")
         self.declare_parameter("right_joint", "right_finger_joint")
@@ -213,7 +246,7 @@ class Indy7GripperNode(Node):
         self.declare_parameter("left_sign", 1.0)
         self.declare_parameter("right_sign", 1.0)
 
-        # Real parameters
+        # 실물 파라미터: Indy controller 접속 정보와 endtool DO 상태.
         self.declare_parameter("robot_ip", "166.104.234.72")
         self.declare_parameter("port_name", "C")
         self.declare_parameter("open_state", "HIGH_PNP")
@@ -222,6 +255,11 @@ class Indy7GripperNode(Node):
         self.declare_parameter("model", "MPLM1630")
 
     def _handle_backend_call(self, response, fn_name: str):
+        """Trigger callback 공통 처리.
+
+        서비스 이름(open/close/state)에 맞는 backend method를 호출하고
+        Trigger 응답의 success/message로 결과를 돌려준다.
+        """
         try:
             fn = getattr(self.backend, fn_name)
             message = fn()
@@ -236,15 +274,19 @@ class Indy7GripperNode(Node):
         return response
 
     def open_callback(self, request, response):
+        """터미널 명령: ros2 service call /gripper/open std_srvs/srv/Trigger "{}"."""
         return self._handle_backend_call(response, "open")
 
     def close_callback(self, request, response):
+        """터미널 명령: ros2 service call /gripper/close std_srvs/srv/Trigger "{}"."""
         return self._handle_backend_call(response, "close")
 
     def half_open_callback(self, request, response):
+        """터미널 명령: ros2 service call /gripper/half_open std_srvs/srv/Trigger "{}"."""
         return self._handle_backend_call(response, "half_open")
 
     def state_callback(self, request, response):
+        """터미널 명령: ros2 service call /gripper/state std_srvs/srv/Trigger "{}"."""
         return self._handle_backend_call(response, "state")
 
 

@@ -1,3 +1,17 @@
+"""
+Indy7 MoveIt Gazebo launch file.
+
+실행 예시:
+  # Gazebo/RViz 시뮬레이션 + MoveIt
+  ros2 launch indy7_moveit indy_moveit_gazebo.launch.py
+
+  # Servo mode로 실행
+  ros2 launch indy7_moveit indy_moveit_gazebo.launch.py servo_mode:=true
+
+  # 실험 환경 world까지 같이 실행
+  ros2 launch indy7_moveit indy_moveit_gazebo.launch.py gazebo_env:=pick_place
+"""
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -16,6 +30,7 @@ def launch_setup(context, *args, **kwargs):
     indy_eye = LaunchConfiguration("indy_eye")
     servo_mode = LaunchConfiguration("servo_mode")
     prefix = LaunchConfiguration("prefix")
+    gazebo_env = LaunchConfiguration("gazebo_env")
 
     indy_gazebo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -27,6 +42,7 @@ def launch_setup(context, *args, **kwargs):
             "indy_eye": indy_eye,
             "prefix": prefix,
             "launch_rviz": "false",
+            "gazebo_env": gazebo_env,
         }.items(),
     )
 
@@ -95,6 +111,17 @@ def generate_launch_description():
             default_value='""',
             description="Prefix of the joint names, useful for multi-robot setup. \
             If changed than also joint names in the controllers configuration have to be updated."
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "gazebo_env",
+            default_value="",
+            description=(
+                "Gazebo environment name. Empty/default uses the normal "
+                "Gazebo world; pick_place loads indy7_gazebo/worlds/pick_place.world."
+            ),
         )
     )
 
