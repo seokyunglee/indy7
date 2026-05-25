@@ -66,4 +66,5 @@
     <xacro:include filename="$(find indy7_description)/urdf/custom_gripper.xacro"/>
 
     <xacro:custom_gripper parent="tcp" prefix="" />
+    
 </robot>

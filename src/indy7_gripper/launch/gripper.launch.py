@@ -6,7 +6,7 @@ Indy7 gripper launch file.
   ros2 launch indy7_gripper gripper.launch.py mode:=sim
 
   # 실물 MPLM1630 gripper backend
-  ros2 launch indy7_gripper gripper.launch.py mode:=real robot_ip:=166.104.234.72
+  ros2 launch indy7_gripper gripper.launch.py mode:=real robot_ip:=166.104.214.96
 
 터미널에서 gripper 서비스 테스트:
   ros2 service call /gripper/open std_srvs/srv/Trigger "{}"

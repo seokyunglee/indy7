@@ -91,7 +91,7 @@ class Indy7MoveItClient:
             self._declare_and_get("max_velocity", 0.2)
         )
         self.max_acceleration = float(
-            self._declare_and_get("max_acceleration", 0.2)
+            self._declare_and_get("max_acceleration", 0.1)
         )
         self.position_tolerance = float(
             self._declare_and_get("position_tolerance", 0.01)
@@ -850,7 +850,7 @@ class Indy7MoveItClient:
             ):
                 return [(first_cost, first_solution, first_list, "current")]
 
-            self.node.get_logger().info(
+            self.node.get_logger().debug(
                 "현재 seed IK가 멀거나 limit margin에 가까워 "
                 "추가 seed를 탐색합니다: "
                 f"cost={first_cost:.3f}, q={self._fmt_joint_degrees(first_list)}"
@@ -939,7 +939,7 @@ class Indy7MoveItClient:
             return None
 
         best_cost, best_values, best_list, best_label = candidates[0]
-        self.node.get_logger().info(
+        self.node.get_logger().debug(
             "multi-seed IK 선택: "
             f"{best_label}, cost={best_cost:.3f}, "
             f"q={self._fmt_joint_degrees(best_list)}"
@@ -959,7 +959,7 @@ class Indy7MoveItClient:
             start=1,
         ):
             cost, joint_values, joint_list, seed_label = candidate
-            self.node.get_logger().info(
+            self.node.get_logger().debug(
                 f"{label}: trajectory 후보 {attempt}/{max_candidates} "
                 f"planning - {seed_label}, cost={cost:.3f}, "
                 f"q={self._fmt_joint_degrees(joint_list)}"
@@ -985,7 +985,7 @@ class Indy7MoveItClient:
                 )
                 continue
 
-            self.node.get_logger().info(
+            self.node.get_logger().debug(
                 f"{label}: trajectory 후보 선택 - {seed_label}"
             )
             return True, trajectory

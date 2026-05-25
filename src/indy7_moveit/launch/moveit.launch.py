@@ -62,9 +62,8 @@ def launch_setup(context, *args, **kwargs):
             use_gripper,
         ]
     )
-    robot_description = {
-        "robot_description": ParameterValue(robot_description_content, value_type=str)
-    }
+    robot_description = { "robot_description": robot_description_content}
+    
 
     # MoveIt Configuration
     robot_description_semantic_content = Command(
@@ -118,8 +117,8 @@ def launch_setup(context, *args, **kwargs):
 
     trajectory_execution = {
         "moveit_manage_controllers": False,
-        "trajectory_execution.allowed_execution_duration_scaling": 1.2,
-        "trajectory_execution.allowed_goal_duration_margin": 1.0,
+        "trajectory_execution.allowed_execution_duration_scaling": 2.0,
+        "trajectory_execution.allowed_goal_duration_margin": 5.0,
         "trajectory_execution.allowed_start_tolerance": 0.5,
         "trajectory_execution.trajectory_duration_monitoring": False
     }

@@ -4,9 +4,6 @@ Indy7 MoveIt real robot launch file.
 실행 예시:
   # 실물 Indy + MoveIt
   ros2 launch indy7_moveit indy_moveit_real_robot.launch.py indy_ip:=166.104.214.96
-
-  # Servo mode로 실행
-  ros2 launch indy7_moveit indy_moveit_real_robot.launch.py indy_ip:=166.104.214.96 servo_mode:=true
 """
 
 from launch import LaunchDescription
