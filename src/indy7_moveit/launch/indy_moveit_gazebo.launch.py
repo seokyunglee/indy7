@@ -3,13 +3,11 @@ Indy7 MoveIt Gazebo launch file.
 
 실행 예시:
   # Gazebo/RViz 시뮬레이션 + MoveIt
-  ros2 launch indy7_moveit indy_moveit_gazebo.launch.py
+  ros2 launch indy7_moveit indy_moveit_gazebo.launch.py gripper_model:=sim
 
-  # Servo mode로 실행
-  ros2 launch indy7_moveit indy_moveit_gazebo.launch.py servo_mode:=true
 
   # 실험 환경 world까지 같이 실행
-  ros2 launch indy7_moveit indy_moveit_gazebo.launch.py gazebo_env:=pick_place
+  ros2 launch indy7_moveit indy_moveit_gazebo.launch.py gazebo_env:=pick_place gripper_model:=sim
 """
 
 from launch import LaunchDescription
@@ -31,6 +29,7 @@ def launch_setup(context, *args, **kwargs):
     servo_mode = LaunchConfiguration("servo_mode")
     prefix = LaunchConfiguration("prefix")
     gazebo_env = LaunchConfiguration("gazebo_env")
+    gripper_model = LaunchConfiguration("gripper_model")
 
     indy_gazebo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -57,7 +56,7 @@ def launch_setup(context, *args, **kwargs):
             "servo_mode": servo_mode,
             "prefix": prefix,
             "use_sim_time": "true",
-            "use_gripper": "true",
+            "gripper_model": gripper_model,
             "launch_rviz_moveit": "true", # if name == "launch_rviz" => spawn 2 rviz
         }.items(),
     )
@@ -122,6 +121,15 @@ def generate_launch_description():
                 "Gazebo environment name. Empty/default uses the normal "
                 "Gazebo world; pick_place loads indy7_gazebo/worlds/pick_place.world."
             ),
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "gripper_model",
+            default_value="sim",
+            choices=["none", "sim", "real_collision"],
+            description="none: no gripper, sim: joint-controlled gripper, real_collision: fixed collision-only gripper.",
         )
     )
 

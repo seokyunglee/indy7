@@ -1,12 +1,12 @@
 poses:
-  ready:
+  ready_pick:
     frame_id: "link0"
-    position: [0.35, 0.00, 0.45]
+    position: [0.40, 0.00, 0.50]
     orientation: [0.0, 1.0, 0.0, 0.0]
 
   pre_pick:
     frame_id: "link0"
-    position: [0.65, 0.00, 0.42]
+    position: [0.65, 0.00, 0.44]
     orientation: [0.0, 1.0, 0.0, 0.0]
 
   pick:
@@ -14,34 +14,24 @@ poses:
     position: [0.65, 0.00, 0.25]
     orientation: [0.0, 1.0, 0.0, 0.0]
 
-  lift:
+  ready_pass: 
     frame_id: "link0"
-    position: [0.65, 0.00, 0.46]
+    position: [0.20, 0.40, 0.50]
     orientation: [0.0, 1.0, 0.0, 0.0]
 
-  pre_place:
+  pre_pass:
     frame_id: "link0"
-    position: [0.20, 0.50, 0.68]
+    position: [0.20, 0.40, 0.50]
     orientation: [0.0, 1.0, 0.0, 0.0]
 
   pass_orient:
     frame_id: "link0"
-    position: [0.25, 0.56, 0.70]
-    orientation: [0.0, 0.7071, 0.7071, 0.0]
+    position: [0.20, 0.40, 0.70]
+    orientation: [0.0, 1.0, 0.0, 0.0]
 
-  place:
+  pass:
     frame_id: "link0"
-    position: [0.25, 0.70, 0.58]
-    orientation: [0.0, 0.7071, 0.7071, 0.0]
-
-  pass_retreat:
-    frame_id: "link0"
-    position: [0.25, 0.56, 0.68]
-    orientation: [0.0, 0.7071, 0.7071, 0.0]
-
-  post_place:
-    frame_id: "link0"
-    position: [0.20, 0.50, 0.68]
+    position: [0.20, 0.50, 0.55]
     orientation: [0.0, 1.0, 0.0, 0.0]
 
 task:

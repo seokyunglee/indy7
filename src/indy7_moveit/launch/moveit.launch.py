@@ -7,6 +7,10 @@ Indy7 MoveIt-only launch file.
 
   # Gazebo와 같이 쓸 때는 simulation time과 gripper description을 켠다.
   ros2 launch indy7_moveit moveit.launch.py use_sim_time:=true use_gripper:=true
+  ros2 launch indy7_moveit moveit.launch.py use_sim_time:=true gripper_model:=sim
+
+  # 실물에서 joint state 없는 그리퍼 충돌 형상만 붙인다.
+  ros2 launch indy7_moveit moveit.launch.py gripper_model:=real_collision
 
   # MoveIt Servo mode
   ros2 launch indy7_moveit moveit.launch.py servo_mode:=true
@@ -38,7 +42,19 @@ def launch_setup(context, *args, **kwargs):
     launch_rviz_moveit = LaunchConfiguration("launch_rviz_moveit")
     use_sim_time = LaunchConfiguration("use_sim_time")
     use_gripper = LaunchConfiguration("use_gripper")
-    robot_urdf = "indy7_with_gripper.urdf.xacro" if use_gripper.perform(context) == "true" else "indy.urdf.xacro"
+    gripper_model_config = LaunchConfiguration("gripper_model")
+
+    gripper_model = gripper_model_config.perform(context)
+    if gripper_model == "none" and use_gripper.perform(context) == "true":
+        gripper_model = "sim"
+
+    robot_urdf_by_gripper_model = {
+        "none": "indy.urdf.xacro",
+        "sim": "indy7_with_gripper.urdf.xacro",
+        "real_collision": "indy7_with_real_gripper_collision.urdf.xacro",
+    }
+    robot_urdf = robot_urdf_by_gripper_model[gripper_model]
+    srdf_use_gripper = "true" if gripper_model != "none" else "false"
 
     robot_description_content = Command(
         [
@@ -59,7 +75,7 @@ def launch_setup(context, *args, **kwargs):
             prefix,
             " ",
             "use_gripper:=",
-            use_gripper,
+            srdf_use_gripper,
         ]
     )
     robot_description = { "robot_description": robot_description_content}
@@ -85,7 +101,7 @@ def launch_setup(context, *args, **kwargs):
             prefix,
             " ",
             "use_gripper:=",
-            use_gripper,
+            srdf_use_gripper,
         ]
     )
     robot_description_semantic = {"robot_description_semantic": robot_description_semantic_content}
@@ -277,7 +293,16 @@ def generate_launch_description():
         DeclareLaunchArgument(
             "use_gripper",
             default_value="false",
-            description="Use the robot description with the attached gripper.",
+            description="Backward-compatible alias for gripper_model:=sim.",
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "gripper_model",
+            default_value="none",
+            choices=["none", "sim", "real_collision"],
+            description="none: no gripper, sim: joint-controlled gripper, real_collision: fixed collision-only gripper.",
         )
     )
 

@@ -4,6 +4,7 @@ Indy7 MoveIt real robot launch file.
 실행 예시:
   # 실물 Indy + MoveIt
   ros2 launch indy7_moveit indy_moveit_real_robot.launch.py indy_ip:=166.104.214.96
+  ros2 launch indy7_moveit indy_moveit_real_robot.launch.py indy_ip:=166.104.214.96 gripper_model:=real_collision
 """
 
 from launch import LaunchDescription
@@ -25,6 +26,7 @@ def launch_setup(context, *args, **kwargs):
     indy_eye = LaunchConfiguration("indy_eye")
     servo_mode = LaunchConfiguration("servo_mode")
     prefix = LaunchConfiguration("prefix")
+    gripper_model = LaunchConfiguration("gripper_model")
 
     indy_bringup_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -51,6 +53,7 @@ def launch_setup(context, *args, **kwargs):
             "servo_mode": servo_mode,
             "prefix": prefix,
             "use_sim_time": "false",
+            "gripper_model": gripper_model,
             "launch_rviz_moveit": "true", # if name == "launch_rviz" => spawn 2 rviz
         }.items(),
     )
@@ -111,6 +114,15 @@ def generate_launch_description():
             default_value='""',
             description="Prefix of the joint names, useful for multi-robot setup. \
             If changed than also joint names in the controllers configuration have to be updated."
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "gripper_model",
+            default_value="real_collision",
+            choices=["none", "sim", "real_collision"],
+            description="none: no gripper, sim: joint-controlled gripper, real_collision: fixed collision-only gripper.",
         )
     )
 

@@ -88,10 +88,10 @@ class Indy7MoveItClient:
             self._declare_and_get("num_planning_attempts", 5)
         )
         self.max_velocity = float(
-            self._declare_and_get("max_velocity", 0.2)
+            self._declare_and_get("max_velocity", 0.05)
         )
         self.max_acceleration = float(
-            self._declare_and_get("max_acceleration", 0.1)
+            self._declare_and_get("max_acceleration", 0.05)
         )
         self.position_tolerance = float(
             self._declare_and_get("position_tolerance", 0.01)

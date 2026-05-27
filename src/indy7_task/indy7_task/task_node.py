@@ -1,11 +1,11 @@
 """
 Indy7 Pick & Place Task Node
 ============================
-YAML/JSON에 저장된 목표 좌표를 읽어 8단계 pick-and-place 사이클을 실행한다.
+YAML/JSON에 저장된 목표 좌표를 읽어 8단계 pick-and-pass 사이클을 실행한다.
 
-Pick 위치는 YAML의 고정 좌표를 사용하고, place/pass_place 위치는 YAML 또는
-JSON에서 읽는다. pre_pick, lift, pre_place 같은 중간 pose도 YAML에 정의된
-position/orientation을 그대로 사용한다.
+Pick/pass 위치는 YAML의 고정 좌표를 사용하고, use_pass_place가 true이면
+pass 목표만 JSON에서 읽는다. ready_pick, pre_pick, ready_pass, pre_pass 같은
+중간 pose는 YAML에 정의된 position/orientation을 그대로 사용한다.
 
 실행 방법:
   # MoveIt(move_group), controller, gripper node가 먼저 실행되어 있어야 한다.
@@ -54,7 +54,7 @@ def as_float_tuple(value, expected_len, name):
 
 
 class Indy7TaskNode(Node):
-    """Indy7 작업 단위 pick-and-place 실행 노드."""
+    """Indy7 작업 단위 pick-and-pass 실행 노드."""
 
     def __init__(self):
         super().__init__("indy7_task_node")
@@ -165,10 +165,6 @@ class Indy7TaskNode(Node):
     # ----------------------------------------------------------
     def setup_planning_scene(self):
         """MoveIt planning scene에는 pick 선반만 정적 장애물로 등록한다.
-
-        Gazebo/실물 환경의 상세 물체와 grasp 대상은 MoveIt에 중복
-        등록하지 않는다. MoveIt은 pick 선반을 피하는 궤적 생성만 맡고,
-        물체 상호작용은 Gazebo/실물 쪽이 담당한다.
         """
         if not self.use_planning_scene:
             self.get_logger().info("Planning scene 구성이 비활성화되어 있습니다")
@@ -193,17 +189,17 @@ class Indy7TaskNode(Node):
             f"Planning scene 준비 완료: {self.pick_shelf_collision_id}"
         )
 
-    def get_place_target_pose(self):
-        """use_pass_place에 따라 YAML place 또는 JSON pass_place를 선택한다."""
+    def get_pass_target_pose(self):
+        """use_pass_place에 따라 YAML pass 또는 JSON pass_place를 선택한다."""
         if self.use_pass_place:
             return self.pose_loader.get_pass_place_pose(), "pass_place"
-        return self.pose_loader.get_pose("place"), "place"
+        return self.pose_loader.get_pose("pass"), "pass"
 
     # ----------------------------------------------------------
-    #  8단계 pick-and-place 시퀀스
+    #  8단계 pick-and-pass 시퀀스
     # ----------------------------------------------------------
     def run_pick_and_place(self):
-        self.get_logger().info("=== Pick and Place 작업 시작 ===")
+        self.get_logger().info("=== Pick and Pass 작업 시작 ===")
 
         if not self.gripper.wait_for_servers(timeout_sec=3.0):
             raise RuntimeError("Gripper 서비스가 모두 준비되지 않았습니다")
@@ -213,56 +209,53 @@ class Indy7TaskNode(Node):
             raise RuntimeError("joint_states를 사용할 수 없습니다")
         self.setup_planning_scene()
 
-        pick_pose = self.pose_loader.get_pose("pick")
-        pick_above_pose = self.pose_loader.get_pose("pre_pick")
-        lift_pose = self.pose_loader.get_pose("lift")
-        place_above_pose = self.pose_loader.get_pose("pre_place")
-        pass_orient_pose = self.pose_loader.get_pose("pass_orient")
-        pass_retreat_pose = self.pose_loader.get_pose("pass_retreat")
-        post_place_pose = self.pose_loader.get_pose("post_place")
-        place_pose, place_label = self.get_place_target_pose()
+        pre_pass_pose = self.pose_loader.get_pose("pre_pass")
+        pass_pose, pass_label = self.get_pass_target_pose()
+        pass_pose.pose.orientation = pre_pass_pose.pose.orientation
 
-        # 1단계: ready 자세로 이동하고 그리퍼를 연다.
-        self.wait_step("ready + gripper open")
-        self.move_to_pose("ready")
+        # 1단계: pick 기준 ready 자세로 이동하고 그리퍼를 연다.
+        self.wait_step("ready_pick + gripper open")
+        self.move_to_pose("ready_pick")
         if not self.gripper.open():
             raise RuntimeError("그리퍼 열기 실패")
 
-        # 2단계: pick 상공으로 접근한 뒤 실제 pick 위치로 하강한다.
-        self.wait_step("approach pick")
-        self.move_to_pose_stamped(pick_above_pose, "pick_above")
-        self.move_to_pose_stamped(pick_pose, "pick")
+        # 2단계: pick 상공으로 접근한 뒤 실제 pick 위치로 간다.
+        self.wait_step("pre_pick -> pick")
+        self.move_to_pose("pre_pick")
+        self.move_to_pose("pick")
 
         # 3단계: 그리퍼를 닫아 물체를 잡는다.
         self.wait_step("gripper close")
         if not self.gripper.close():
             raise RuntimeError("그리퍼 닫기 실패")
 
-        # 4단계: pick 위치의 x/y를 유지한 채 z만 올려 들어올린다.
-        self.wait_step("lift")
-        self.move_to_pose_stamped(lift_pose, "lift")
+        # 4단계: pre_pick을 거쳐 pick 기준 ready 자세로 돌아온다.
+        self.wait_step("pre_pick -> ready_pick")
+        self.move_to_pose("pre_pick")
+        self.move_to_pose("ready_pick")
 
-        # 5단계: pass 뒤쪽 안전 위치에서 앞보기 orientation으로 바꾼다.
-        self.wait_step(f"prepare {place_label} orientation")
-        self.move_to_pose_stamped(place_above_pose, f"{place_label}_ready_down")
-        self.move_to_pose_stamped(pass_orient_pose, f"{place_label}_ready_front")
+        # 5단계: pass 기준 ready 자세로 이동한다.
+        self.wait_step("ready_pass")
+        self.move_to_pose("ready_pass")
 
-        # 6단계: 앞보기 orientation을 유지한 채 전달 위치로 전진한다.
-        self.wait_step(f"forward to {place_label}")
-        self.move_to_pose_stamped(place_pose, place_label)
+        # 6단계: pass orientation 전환은 잠시 끄고 아래보기 자세로 간다.
+        self.wait_step(f"pre_pass -> {pass_label}")
+        self.move_to_pose("pre_pass")
+        # self.move_to_pose("pass_orient")
+        self.move_to_pose_stamped(pass_pose, pass_label)
 
         # 7단계: 그리퍼를 열어 물체를 놓는다.
         self.wait_step("gripper open release")
         if not self.gripper.open():
             raise RuntimeError("물체 release를 위한 그리퍼 열기 실패")
 
-        # 8단계: 앞보기 상태로 먼저 후퇴한 뒤 orientation을 복귀하고 ready로 간다.
-        self.wait_step("retreat and return ready")
-        self.move_to_pose_stamped(pass_retreat_pose, f"retreat/{place_label}_front")
-        self.move_to_pose_stamped(post_place_pose, f"retreat/{place_label}_down")
-        self.move_to_pose("ready")
+        # 8단계: pass 상공과 pass ready를 거쳐 pick ready로 돌아온다.
+        self.wait_step("pre_pass -> ready_pass -> ready_pick")
+        self.move_to_pose("pre_pass")
+        self.move_to_pose("ready_pass")
+        self.move_to_pose("ready_pick")
 
-        self.get_logger().info("=== Pick and Place 작업 완료 ===")
+        self.get_logger().info("=== Pick and Pass 작업 완료 ===")
 
 
 def main(args=None):

@@ -1,0 +1,75 @@
+# Preview task segment sequence.
+#
+# Existing task_node.py/task_node_servo.py do not use this file. It is for the
+# new task_node_preview.py flow:
+#   plan-only -> RViz preview marker -> keyboard confirmation -> execute.
+#
+# Segment types:
+#   pose      : seeded IK + joint-goal planning to a pose in task_poses.yaml
+#   joint     : joint-goal planning to a named joint pose below
+#   cartesian : compute_cartesian_path through pose waypoints in task_poses.yaml
+#   gripper   : Trigger service command, one of open/close/state
+
+joint_poses: {}
+
+sequence:
+  - name: ready_pick
+    type: pose
+    target: ready_pick
+
+  - name: gripper_open_initial
+    type: gripper
+    command: open
+
+  - name: pre_pick
+    type: pose
+    target: pre_pick
+
+  - name: descend_to_pick
+    type: cartesian
+    waypoints:
+      - pick
+
+  - name: gripper_close_pick
+    type: gripper
+    command: close
+
+  - name: lift_to_pre_pick
+    type: cartesian
+    waypoints:
+      - pre_pick
+
+  - name: return_ready_pick
+    type: pose
+    target: ready_pick
+
+  - name: ready_pass
+    type: pose
+    target: ready_pass
+
+  - name: pre_pass
+    type: pose
+    target: pre_pass
+
+  - name: descend_to_pass
+    type: cartesian
+    orientation_from: pre_pass
+    waypoints:
+      - pass
+
+  - name: gripper_open_release
+    type: gripper
+    command: open
+
+  - name: retreat_to_pre_pass
+    type: cartesian
+    waypoints:
+      - pre_pass
+
+  - name: return_ready_pass
+    type: pose
+    target: ready_pass
+
+  - name: return_ready_pick
+    type: pose
+    target: ready_pick

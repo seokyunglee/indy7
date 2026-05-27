@@ -2,7 +2,7 @@ indy7_gripper_node:
   ros__parameters:
     mode: "real"
 
-    robot_ip: "166.104.234.72"
+    robot_ip: "166.104.214.96"
     port_name: "C"
 
     open_state: "HIGH_PNP"
