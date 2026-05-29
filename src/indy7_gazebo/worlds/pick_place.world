@@ -62,7 +62,7 @@
 
     <model name="pick_shelf">
       <static>true</static>
-      <pose>0.65 0.0 0.769 0 0 0</pose>
+      <pose>0.0 -0.72 0.690 0 0 0</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
@@ -95,7 +95,7 @@
 
     <model name="puzzle_block">
       <static>false</static>
-      <pose>0.65 0.0 0.819 0 0 0</pose>
+      <pose>0.0 -0.72 0.727 0 0 0</pose>
       <link name="link">
         <inertial>
           <mass>0.05</mass>

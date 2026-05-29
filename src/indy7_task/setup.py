@@ -30,6 +30,7 @@ setup(
         "console_scripts": [
             "task_node = indy7_task.task_node:main",
             "task_node_servo = indy7_task.task_node_servo:main",
+            "task_repeat_node = indy7_task.task_repeat_node:main",
             "dcp3_monitor = indy7_task.dcp3_monitor:main",
         ],
     },

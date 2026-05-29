@@ -9,6 +9,10 @@ YAML pose 형식:
       frame_id: "link0"
       position: [x, y, z]
       orientation: [x, y, z, w]
+  joint_targets:
+    ready_pick:
+      joint_names: [joint0, joint1, joint2, joint3, joint4, joint5]
+      positions: [j0, j1, j2, j3, j4, j5]
 
 JSON pass_place 형식:
   {
@@ -78,6 +82,27 @@ class PoseLoader:
         """YAML task 섹션의 scalar parameter를 반환한다."""
         task = self.yaml_data.get("task", {})
         return task.get(key, default)
+
+    def get_joint_target(self, name: str):
+        """YAML joint_targets 섹션에서 이름 joint target을 반환한다."""
+        joint_targets = self.yaml_data.get("joint_targets", {})
+        if name not in joint_targets:
+            raise KeyError(
+                f"Joint target '{name}' not found in {self.yaml_path}"
+            )
+
+        data = joint_targets[name]
+        joint_names = list(data["joint_names"])
+        positions = [float(value) for value in data["positions"]]
+        if len(joint_names) != len(positions):
+            raise ValueError(
+                f"Joint target '{name}' has different joint_names/positions lengths"
+            )
+
+        return {
+            "joint_names": joint_names,
+            "positions": positions,
+        }
 
     def get_pass_place_pose(self) -> PoseStamped:
         """JSON pass_place_goal 파일을 PoseStamped로 반환한다."""

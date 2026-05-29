@@ -1,38 +1,49 @@
 poses:
-  ready_pick:
-    frame_id: "link0"
-    position: [0.40, 0.00, 0.50]
-    orientation: [0.0, 1.0, 0.0, 0.0]
-
+  # Coordinates are in link0 frame, meters.
+  # Base points from the current pick/pass targets:
+  #   pick: x=0, y=-72cm, floor z=72.7cm -> link0 z=0.093
+  #   pass: x=45cm, y=0, tcp z=0.75
+  # TCP targets are raised by 0.08m from the raw object center heights.
   pre_pick:
     frame_id: "link0"
-    position: [0.65, 0.00, 0.44]
+    position: [0.00, -0.72, 0.373]
     orientation: [0.0, 1.0, 0.0, 0.0]
 
   pick:
     frame_id: "link0"
-    position: [0.65, 0.00, 0.25]
+    position: [0.00, -0.72, 0.173]
     orientation: [0.0, 1.0, 0.0, 0.0]
 
   ready_pass: 
     frame_id: "link0"
-    position: [0.20, 0.40, 0.50]
+    position: [-0.65, -0.36, 1.18]
     orientation: [0.0, 1.0, 0.0, 0.0]
 
   pre_pass:
     frame_id: "link0"
-    position: [0.20, 0.40, 0.50]
+    position: [-1.25, 0.00, 1.28]
     orientation: [0.0, 1.0, 0.0, 0.0]
 
   pass_orient:
     frame_id: "link0"
-    position: [0.20, 0.40, 0.70]
-    orientation: [0.0, 1.0, 0.0, 0.0]
+    position: [-1.25, 0.00, 1.28]
+    orientation: [0.0, 0.9239, 0.0, 0.3827]
 
   pass:
     frame_id: "link0"
-    position: [0.20, 0.50, 0.55]
-    orientation: [0.0, 1.0, 0.0, 0.0]
+    position: [0.45, 0.00, 0.75]
+    orientation: [0.0, 0.9239, 0.0, 0.3827]
+
+joint_targets:
+  # HomePos with joint0 rotated -90 deg toward the pick side.
+  ready_pick:
+    joint_names: [joint0, joint1, joint2, joint3, joint4, joint5]
+    positions: [-1.5708, 0.0, -1.5708, 0.0, -1.5708, 0.0]
+
+  # Default HomePos for crossing toward the pass side without Cartesian IK.
+  ready_pass:
+    joint_names: [joint0, joint1, joint2, joint3, joint4, joint5]
+    positions: [0.0, 0.0, -1.5708, 0.0, -1.5708, 0.0]
 
 task:
   step_wait_sec: 0.5

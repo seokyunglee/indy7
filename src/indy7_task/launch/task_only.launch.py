@@ -8,6 +8,9 @@ Indy7 task-only launch file.
   # 한 단계씩 SPACE로 확인하는 servo task
   ros2 launch indy7_task task_only.launch.py task_executable:=task_node_servo
 
+  # SPACE 없이 pick-and-place 반복 실행
+  ros2 launch indy7_task task_only.launch.py task_executable:=task_repeat_node repeat_count:=30 max_velocity:=0.3 max_acceleration:=0.3
+
   # 실물 첫 테스트처럼 속도/가속도를 낮춰 실행
   ros2 launch indy7_task task_only.launch.py task_executable:=task_node_servo max_velocity:=0.05 max_acceleration:=0.05
 """
@@ -26,6 +29,8 @@ def generate_launch_description():
     pass_place_goal_path = LaunchConfiguration("pass_place_goal_path")
     use_pass_place = LaunchConfiguration("use_pass_place")
     auto_start = LaunchConfiguration("auto_start")
+    repeat_count = LaunchConfiguration("repeat_count")
+    cycle_wait_sec = LaunchConfiguration("cycle_wait_sec")
     group_name = LaunchConfiguration("group_name")
     base_link_name = LaunchConfiguration("base_link_name")
     end_effector_name = LaunchConfiguration("end_effector_name")
@@ -68,6 +73,8 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument("use_pass_place", default_value="false"),
         DeclareLaunchArgument("auto_start", default_value="true"),
+        DeclareLaunchArgument("repeat_count", default_value="10"),
+        DeclareLaunchArgument("cycle_wait_sec", default_value="0.5"),
         DeclareLaunchArgument("group_name", default_value="indy_manipulator"),
         DeclareLaunchArgument("base_link_name", default_value="link0"),
         DeclareLaunchArgument("end_effector_name", default_value="tcp"),
@@ -85,7 +92,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             "pick_shelf_top_center",
-            default_value="[0.65, 0.0, 0.16]",
+            default_value="[0.0, -0.72, 0.081]",
             description="Pick shelf top center in scene frame, meters.",
         ),
         DeclareLaunchArgument(
@@ -120,6 +127,14 @@ def generate_launch_description():
                         value_type=bool,
                     ),
                     "auto_start": ParameterValue(auto_start, value_type=bool),
+                    "repeat_count": ParameterValue(
+                        repeat_count,
+                        value_type=int,
+                    ),
+                    "cycle_wait_sec": ParameterValue(
+                        cycle_wait_sec,
+                        value_type=float,
+                    ),
                     "group_name": group_name,
                     "base_link_name": base_link_name,
                     "end_effector_name": end_effector_name,

@@ -4,8 +4,8 @@ Indy7 Pick & Place Task Node
 YAML/JSON에 저장된 목표 좌표를 읽어 8단계 pick-and-pass 사이클을 실행한다.
 
 Pick/pass 위치는 YAML의 고정 좌표를 사용하고, use_pass_place가 true이면
-pass 목표만 JSON에서 읽는다. ready_pick, pre_pick, ready_pass, pre_pass 같은
-중간 pose는 YAML에 정의된 position/orientation을 그대로 사용한다.
+pass 목표만 JSON에서 읽는다. ready_pick/ready_pass는 joint target으로
+보내고, pre_pick과 pick/pass 목표는 YAML/JSON의 pose를 그대로 사용한다.
 
 실행 방법:
   # MoveIt(move_group), controller, gripper node가 먼저 실행되어 있어야 한다.
@@ -77,7 +77,7 @@ class Indy7TaskNode(Node):
         self.declare_parameter("use_planning_scene", True)
         self.declare_parameter("clear_scene_on_start", True)
         self.declare_parameter("pick_shelf_collision_id", "pick_shelf")
-        self.declare_parameter("pick_shelf_top_center", [0.65, 0.0, 0.16])
+        self.declare_parameter("pick_shelf_top_center", [0.0, -0.72, 0.081])
         self.declare_parameter("pick_shelf_dimensions", [0.32, 0.30, 0.05])
         self.declare_parameter("gripper_open_service", "/gripper/open")
         self.declare_parameter("gripper_close_service", "/gripper/close")
@@ -160,6 +160,37 @@ class Indy7TaskNode(Node):
         if not self.moveit.go_smooth(pose, label):
             raise RuntimeError(f"Failed to move to {label}")
 
+    def move_to_joint_target(self, target_name, label=None):
+        """YAML에 정의된 joint target으로 이동한다."""
+        label = label or target_name
+        target = self.pose_loader.get_joint_target(target_name)
+        target_by_name = dict(zip(target["joint_names"], target["positions"]))
+
+        missing = [
+            joint_name
+            for joint_name in self.moveit.joint_names
+            if joint_name not in target_by_name
+        ]
+        if missing:
+            raise RuntimeError(
+                f"Joint target '{target_name}' is missing joints: "
+                f"{', '.join(missing)}"
+            )
+
+        joint_values = {
+            joint_name: target_by_name[joint_name]
+            for joint_name in self.moveit.joint_names
+        }
+        plan_success, trajectory = self.moveit.plan_to_joint_goal(joint_values)
+        if not plan_success or trajectory is None:
+            raise RuntimeError(f"Failed to plan to {label}")
+        if not self.moveit.check_trajectory_safety(trajectory, label=label):
+            raise RuntimeError(f"Unsafe trajectory to {label}")
+        if not self.moveit.execute_trajectory(trajectory):
+            raise RuntimeError(f"Failed to execute {label}")
+
+        self.get_logger().info(f"{label} 이동 완료")
+
     # ----------------------------------------------------------
     #  Planning scene 구성
     # ----------------------------------------------------------
@@ -209,13 +240,11 @@ class Indy7TaskNode(Node):
             raise RuntimeError("joint_states를 사용할 수 없습니다")
         self.setup_planning_scene()
 
-        pre_pass_pose = self.pose_loader.get_pose("pre_pass")
         pass_pose, pass_label = self.get_pass_target_pose()
-        pass_pose.pose.orientation = pre_pass_pose.pose.orientation
 
         # 1단계: pick 기준 ready 자세로 이동하고 그리퍼를 연다.
         self.wait_step("ready_pick + gripper open")
-        self.move_to_pose("ready_pick")
+        self.move_to_joint_target("ready_pick")
         if not self.gripper.open():
             raise RuntimeError("그리퍼 열기 실패")
 
@@ -232,16 +261,14 @@ class Indy7TaskNode(Node):
         # 4단계: pre_pick을 거쳐 pick 기준 ready 자세로 돌아온다.
         self.wait_step("pre_pick -> ready_pick")
         self.move_to_pose("pre_pick")
-        self.move_to_pose("ready_pick")
+        self.move_to_joint_target("ready_pick")
 
-        # 5단계: pass 기준 ready 자세로 이동한다.
+        # 5단계: pass 기준 ready joint 자세로 이동한다.
         self.wait_step("ready_pass")
-        self.move_to_pose("ready_pass")
+        self.move_to_joint_target("ready_pass")
 
-        # 6단계: pass orientation 전환은 잠시 끄고 아래보기 자세로 간다.
-        self.wait_step(f"pre_pass -> {pass_label}")
-        self.move_to_pose("pre_pass")
-        # self.move_to_pose("pass_orient")
+        # 6단계: ready_pass joint 자세에서 pass 목표 pose로 바로 간다.
+        self.wait_step(f"ready_pass -> {pass_label}")
         self.move_to_pose_stamped(pass_pose, pass_label)
 
         # 7단계: 그리퍼를 열어 물체를 놓는다.
@@ -249,11 +276,10 @@ class Indy7TaskNode(Node):
         if not self.gripper.open():
             raise RuntimeError("물체 release를 위한 그리퍼 열기 실패")
 
-        # 8단계: pass 상공과 pass ready를 거쳐 pick ready로 돌아온다.
-        self.wait_step("pre_pass -> ready_pass -> ready_pick")
-        self.move_to_pose("pre_pass")
-        self.move_to_pose("ready_pass")
-        self.move_to_pose("ready_pick")
+        # 8단계: pass ready joint 자세를 거쳐 pick ready로 돌아온다.
+        self.wait_step("ready_pass -> ready_pick")
+        self.move_to_joint_target("ready_pass")
+        self.move_to_joint_target("ready_pick")
 
         self.get_logger().info("=== Pick and Pass 작업 완료 ===")
 
