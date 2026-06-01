@@ -31,6 +31,7 @@ setup(
             "task_node = indy7_task.task_node:main",
             "task_node_servo = indy7_task.task_node_servo:main",
             "task_repeat_node = indy7_task.task_repeat_node:main",
+            "hri_adaptive_task = indy7_task.hri_adaptive_task:main",
             "dcp3_monitor = indy7_task.dcp3_monitor:main",
         ],
     },

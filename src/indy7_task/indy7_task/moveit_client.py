@@ -126,16 +126,16 @@ class Indy7MoveItClient:
             self._declare_and_get("enable_trajectory_safety", True)
         )
         self.max_joint_delta_deg = float(
-            self._declare_and_get("max_joint_delta_deg", 170.0)
+            self._declare_and_get("max_joint_delta_deg", 120.0)
         )
         self.max_waypoint_jump_deg = float(
-            self._declare_and_get("max_waypoint_jump_deg", 90.0)
+            self._declare_and_get("max_waypoint_jump_deg", 45.0)
         )
         self.max_joint_total_motion_deg = float(
-            self._declare_and_get("max_joint_total_motion_deg", 260.0)
+            self._declare_and_get("max_joint_total_motion_deg", 180.0)
         )
         self.max_trajectory_candidates = int(
-            self._declare_and_get("max_trajectory_candidates", 3)
+            self._declare_and_get("max_trajectory_candidates", 2)
         )
 
         # ------------------------------------------------------
@@ -1006,70 +1006,3 @@ class Indy7MoveItClient:
             self.node.get_logger().info(f"{label} 이동 완료")
             return True
         return False
-
-    def go_smooth_with_constraints(
-        self,
-        pose_stamped,
-        path_constraints,
-        label="pose",
-        avoid_collisions=True,
-    ):
-        """현재 관절 seed IK 흐름에 path_constraints를 얹어 실행한다.
-
-        예제의 path constraint planning과 현재 파일의 seeded IK planning을
-        합친 함수다. IK 후보가 성공하면 joint goal planning에
-        path_constraints를 넣고, 실패하면 바로 실패로 처리한다.
-        """
-        candidates = self.rank_seeded_ik_candidates(
-            pose_stamped,
-            avoid_collisions=avoid_collisions,
-        )
-        if not candidates:
-            self.node.get_logger().error(
-                f"{label}: 경로 제약 IK 후보를 찾지 못했습니다"
-            )
-            return False
-
-        plan_success, trajectory = self._plan_safe_joint_candidate(
-            candidates,
-            label,
-            path_constraints=path_constraints,
-        )
-        if not plan_success or trajectory is None:
-            self.node.get_logger().error(
-                f"{label}: 안전한 경로 제약 IK trajectory 후보를 찾지 못했습니다"
-            )
-            return False
-
-        if not self.check_trajectory_safety(trajectory, label=label):
-            return False
-
-        if self.execute_trajectory(trajectory):
-            self.node.get_logger().info(f"{label} 이동 완료")
-            return True
-        return False
-
-    def go_smooth_with_orientation_constraint(
-        self,
-        pose_stamped,
-        label="pose",
-        reference_pose_stamped=None,
-        x_tolerance=None,
-        y_tolerance=None,
-        z_tolerance=None,
-        avoid_collisions=True,
-    ):
-        """기준 pose의 TCP orientation을 유지하며 목표 pose로 이동한다."""
-        reference_pose = reference_pose_stamped or pose_stamped
-        path_constraints = self.make_orientation_path_constraint(
-            reference_pose,
-            x_tolerance=x_tolerance,
-            y_tolerance=y_tolerance,
-            z_tolerance=z_tolerance,
-        )
-        return self.go_smooth_with_constraints(
-            pose_stamped,
-            path_constraints,
-            label=label,
-            avoid_collisions=avoid_collisions,
-        )

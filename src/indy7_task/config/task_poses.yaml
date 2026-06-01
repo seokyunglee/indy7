@@ -14,21 +14,6 @@ poses:
     position: [0.00, -0.72, 0.173]
     orientation: [0.0, 1.0, 0.0, 0.0]
 
-  ready_pass: 
-    frame_id: "link0"
-    position: [-0.65, -0.36, 1.18]
-    orientation: [0.0, 1.0, 0.0, 0.0]
-
-  pre_pass:
-    frame_id: "link0"
-    position: [-1.25, 0.00, 1.28]
-    orientation: [0.0, 1.0, 0.0, 0.0]
-
-  pass_orient:
-    frame_id: "link0"
-    position: [-1.25, 0.00, 1.28]
-    orientation: [0.0, 0.9239, 0.0, 0.3827]
-
   pass:
     frame_id: "link0"
     position: [0.45, 0.00, 0.75]

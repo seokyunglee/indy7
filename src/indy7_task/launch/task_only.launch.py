@@ -26,8 +26,6 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     task_executable = LaunchConfiguration("task_executable")
     task_poses_path = LaunchConfiguration("task_poses_path")
-    pass_place_goal_path = LaunchConfiguration("pass_place_goal_path")
-    use_pass_place = LaunchConfiguration("use_pass_place")
     auto_start = LaunchConfiguration("auto_start")
     repeat_count = LaunchConfiguration("repeat_count")
     cycle_wait_sec = LaunchConfiguration("cycle_wait_sec")
@@ -63,15 +61,6 @@ def generate_launch_description():
                 "task_poses.yaml",
             ]),
         ),
-        DeclareLaunchArgument(
-            "pass_place_goal_path",
-            default_value=PathJoinSubstitution([
-                FindPackageShare("indy7_task"),
-                "config",
-                "pass_place_goal.json",
-            ]),
-        ),
-        DeclareLaunchArgument("use_pass_place", default_value="false"),
         DeclareLaunchArgument("auto_start", default_value="true"),
         DeclareLaunchArgument("repeat_count", default_value="10"),
         DeclareLaunchArgument("cycle_wait_sec", default_value="0.5"),
@@ -121,11 +110,6 @@ def generate_launch_description():
             parameters=[
                 {
                     "task_poses_path": task_poses_path,
-                    "pass_place_goal_path": pass_place_goal_path,
-                    "use_pass_place": ParameterValue(
-                        use_pass_place,
-                        value_type=bool,
-                    ),
                     "auto_start": ParameterValue(auto_start, value_type=bool),
                     "repeat_count": ParameterValue(
                         repeat_count,

@@ -1,18 +1,16 @@
 """
 Indy7 Pick & Place Task Node
 ============================
-YAML/JSON에 저장된 목표 좌표를 읽어 8단계 pick-and-pass 사이클을 실행한다.
+YAML에 저장된 고정 목표 좌표를 읽어 8단계 pick-and-pass 데모 사이클을
+실행한다.
 
-Pick/pass 위치는 YAML의 고정 좌표를 사용하고, use_pass_place가 true이면
-pass 목표만 JSON에서 읽는다. ready_pick/ready_pass는 joint target으로
-보내고, pre_pick과 pick/pass 목표는 YAML/JSON의 pose를 그대로 사용한다.
+Pick/pass 위치는 모두 YAML의 고정 좌표를 사용한다. ready_pick/ready_pass는
+joint target으로 보내고, pre_pick과 pick/pass 목표는 YAML pose를 그대로
+사용한다.
 
 실행 방법:
   # MoveIt(move_group), controller, gripper node가 먼저 실행되어 있어야 한다.
   ros2 launch indy7_task task_only.launch.py
-
-  # JSON pass_place를 사용하려면:
-  ros2 launch indy7_task task_only.launch.py use_pass_place:=true
 """
 
 import time
@@ -66,13 +64,8 @@ class Indy7TaskNode(Node):
         default_task_poses = (
             f"{package_share}/config/task_poses.yaml"
         )
-        default_pass_place_goal = (
-            f"{package_share}/config/pass_place_goal.json"
-        )
 
         self.declare_parameter("task_poses_path", default_task_poses)
-        self.declare_parameter("pass_place_goal_path", default_pass_place_goal)
-        self.declare_parameter("use_pass_place", False)
         self.declare_parameter("auto_start", True)
         self.declare_parameter("use_planning_scene", True)
         self.declare_parameter("clear_scene_on_start", True)
@@ -84,12 +77,6 @@ class Indy7TaskNode(Node):
         self.declare_parameter("gripper_state_service", "/gripper/state")
 
         self.task_poses_path = self.get_parameter("task_poses_path").value
-        self.pass_place_goal_path = self.get_parameter(
-            "pass_place_goal_path"
-        ).value
-        self.use_pass_place = as_bool(
-            self.get_parameter("use_pass_place").value
-        )
         self.auto_start = as_bool(self.get_parameter("auto_start").value)
         self.use_planning_scene = as_bool(
             self.get_parameter("use_planning_scene").value
@@ -120,7 +107,6 @@ class Indy7TaskNode(Node):
         self.pose_loader = PoseLoader(
             node=self,
             yaml_path=self.task_poses_path,
-            json_path=self.pass_place_goal_path,
         )
 
         self.gripper = GripperClient(
@@ -220,12 +206,6 @@ class Indy7TaskNode(Node):
             f"Planning scene 준비 완료: {self.pick_shelf_collision_id}"
         )
 
-    def get_pass_target_pose(self):
-        """use_pass_place에 따라 YAML pass 또는 JSON pass_place를 선택한다."""
-        if self.use_pass_place:
-            return self.pose_loader.get_pass_place_pose(), "pass_place"
-        return self.pose_loader.get_pose("pass"), "pass"
-
     # ----------------------------------------------------------
     #  8단계 pick-and-pass 시퀀스
     # ----------------------------------------------------------
@@ -239,8 +219,6 @@ class Indy7TaskNode(Node):
         if not self.moveit.wait_for_joint_state(timeout_sec=10.0):
             raise RuntimeError("joint_states를 사용할 수 없습니다")
         self.setup_planning_scene()
-
-        pass_pose, pass_label = self.get_pass_target_pose()
 
         # 1단계: pick 기준 ready 자세로 이동하고 그리퍼를 연다.
         self.wait_step("ready_pick + gripper open")
@@ -267,9 +245,9 @@ class Indy7TaskNode(Node):
         self.wait_step("ready_pass")
         self.move_to_joint_target("ready_pass")
 
-        # 6단계: ready_pass joint 자세에서 pass 목표 pose로 바로 간다.
-        self.wait_step(f"ready_pass -> {pass_label}")
-        self.move_to_pose_stamped(pass_pose, pass_label)
+        # 6단계: ready_pass joint 자세에서 YAML pass 목표 pose로 바로 간다.
+        self.wait_step("ready_pass -> pass")
+        self.move_to_pose("pass")
 
         # 7단계: 그리퍼를 열어 물체를 놓는다.
         self.wait_step("gripper open release")
