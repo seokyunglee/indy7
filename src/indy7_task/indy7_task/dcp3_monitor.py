@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """IndyDCP3 실물 로봇 상태 모니터.
 
 ROS/MoveIt 명령을 보내는 동안 별도 터미널에 켜두고, 실물 로봇이 멈추거나

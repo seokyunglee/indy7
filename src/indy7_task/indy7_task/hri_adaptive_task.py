@@ -36,6 +36,8 @@ from threading import Thread
 import rclpy
 from ament_index_python.packages import get_package_share_directory
 from rclpy.executors import MultiThreadedExecutor
+from std_msgs.msg import String
+from std_srvs.srv import Trigger
 
 from indy7_task.task_node import Indy7TaskNode, as_bool
 
@@ -58,6 +60,18 @@ class HRIAdaptiveTaskNode(Indy7TaskNode):
         self.declare_parameter("pass_goal_wait_timeout_sec", 0.0)
         self.declare_parameter("repeat_count", 10)
         self.declare_parameter("cycle_wait_sec", 0.5)
+        self.declare_parameter("task_phase_topic", "/indy7/task_phase")
+        self.declare_parameter(
+            "consume_hold_release_service",
+            "/indy7/consume_hold_release",
+        )
+        self.declare_parameter("hold_release_poll_sec", 0.1)
+        self.declare_parameter(
+            "get_review_pending_service",
+            "/indy7/get_review_pending",
+        )
+        self.declare_parameter("review_pending_poll_sec", 0.1)
+        self.declare_parameter("review_pending_wait_timeout_sec", 0.0)
 
         self.pass_place_goal_path = self.get_parameter(
             "pass_place_goal_path"
@@ -78,6 +92,22 @@ class HRIAdaptiveTaskNode(Indy7TaskNode):
         self.cycle_wait_sec = float(
             self.get_parameter("cycle_wait_sec").value
         )
+        self.task_phase_topic = self.get_parameter("task_phase_topic").value
+        self.consume_hold_release_service = self.get_parameter(
+            "consume_hold_release_service"
+        ).value
+        self.hold_release_poll_sec = float(
+            self.get_parameter("hold_release_poll_sec").value
+        )
+        self.get_review_pending_service = self.get_parameter(
+            "get_review_pending_service"
+        ).value
+        self.review_pending_poll_sec = float(
+            self.get_parameter("review_pending_poll_sec").value
+        )
+        self.review_pending_wait_timeout_sec = float(
+            self.get_parameter("review_pending_wait_timeout_sec").value
+        )
 
         self.pose_loader.json_path = self.pass_place_goal_path
         self.cycle_index = 0
@@ -87,10 +117,107 @@ class HRIAdaptiveTaskNode(Indy7TaskNode):
         self.last_successful_pass_pose = None
         self.last_successful_pass_label = "pass"
         self.pass_goal_applied_this_cycle = False
+        self.phase_publisher = self.create_publisher(
+            String,
+            self.task_phase_topic,
+            10,
+        )
+        self.consume_hold_release_client = self.create_client(
+            Trigger,
+            self.consume_hold_release_service,
+        )
+        self.get_review_pending_client = self.create_client(
+            Trigger,
+            self.get_review_pending_service,
+        )
 
         self.get_logger().info(
             f"HRI adaptive task 준비 완료: {self.pass_place_goal_path}"
         )
+
+    def publish_task_phase(self, phase):
+        msg = String()
+        msg.data = phase
+        self.phase_publisher.publish(msg)
+        self.get_logger().info(f"[PHASE] {phase}")
+
+    def wait_for_hold_release(self):
+        self.get_logger().info(
+            "[HOLD] 외부 hold release trigger를 기다립니다."
+        )
+
+        if not self.consume_hold_release_client.wait_for_service(
+            timeout_sec=5.0
+        ):
+            raise RuntimeError(
+                "hold release consume 서비스를 사용할 수 없습니다"
+            )
+
+        while rclpy.ok():
+            future = self.consume_hold_release_client.call_async(
+                Trigger.Request()
+            )
+            rclpy.spin_until_future_complete(self, future, timeout_sec=2.0)
+            if not future.done():
+                time.sleep(max(self.hold_release_poll_sec, 0.01))
+                continue
+
+            response = future.result()
+            if response is None:
+                time.sleep(max(self.hold_release_poll_sec, 0.01))
+                continue
+
+            if response.success:
+                self.get_logger().info("[HOLD] release trigger 수신")
+                return
+
+            time.sleep(max(self.hold_release_poll_sec, 0.01))
+
+        raise RuntimeError("ROS 종료로 hold release 대기를 중단했습니다")
+
+    def wait_for_review_completion(self):
+        """RETURNING 종료 시점에 review pending이 있으면 완료까지 대기한다."""
+        if not self.get_review_pending_client.wait_for_service(timeout_sec=5.0):
+            raise RuntimeError(
+                "review pending 조회 서비스를 사용할 수 없습니다"
+            )
+
+        deadline = None
+        if self.review_pending_wait_timeout_sec > 0.0:
+            deadline = time.time() + self.review_pending_wait_timeout_sec
+
+        while rclpy.ok():
+            future = self.get_review_pending_client.call_async(
+                Trigger.Request()
+            )
+            rclpy.spin_until_future_complete(self, future, timeout_sec=2.0)
+            if not future.done():
+                time.sleep(max(self.review_pending_poll_sec, 0.01))
+                continue
+
+            response = future.result()
+            if response is None:
+                time.sleep(max(self.review_pending_poll_sec, 0.01))
+                continue
+
+            if not response.success:
+                self.get_logger().info(
+                    "[REVIEW] pending 없음, 다음 cycle 준비를 계속합니다."
+                )
+                return
+
+            self.get_logger().info(
+                "[REVIEW] HRI 평가/JSON 생성 중이라 대기합니다."
+            )
+            if deadline is not None and time.time() >= deadline:
+                self.get_logger().warn(
+                    "review pending 대기 timeout 도달, 현재 목표 유지로 진행합니다."
+                )
+                return
+
+            time.sleep(max(self.review_pending_poll_sec, 0.01))
+
+        raise RuntimeError("ROS 종료로 review pending 대기를 중단했습니다")
 
     def _open_keyboard_input(self):
         try:
@@ -219,6 +346,7 @@ class HRIAdaptiveTaskNode(Indy7TaskNode):
     def run_pick_and_place(self):
         """기본 시퀀스는 유지하되 pass 목표만 cycle 시작 시 JSON으로 결정한다."""
         self.cycle_index += 1
+        self.publish_task_phase("PICKING")
         self.get_logger().info(
             f"=== HRI Adaptive Pick and Pass Cycle {self.cycle_index} 시작 ==="
         )
@@ -281,14 +409,19 @@ class HRIAdaptiveTaskNode(Indy7TaskNode):
         self.last_successful_pass_pose = pass_pose
         self.last_successful_pass_label = pass_label
 
+        self.publish_task_phase("AT_TASK")
+        self.wait_for_hold_release()
+
         self.wait_step("gripper open release")
-        self.wait_for_space_before_gripper_open("pass release open")
         if not self.gripper.open():
             raise RuntimeError("물체 release를 위한 그리퍼 열기 실패")
 
+        self.publish_task_phase("RETURNING")
         self.wait_step("ready_pass -> ready_pick")
         self.move_to_joint_target("ready_pass")
         self.move_to_joint_target("ready_pick")
+        self.wait_for_review_completion()
+        self.publish_task_phase("IDLE")
 
         self.get_logger().info(
             f"=== HRI Adaptive Pick and Pass Cycle {self.cycle_index} 완료 ==="

@@ -126,13 +126,13 @@ class Indy7MoveItClient:
             self._declare_and_get("enable_trajectory_safety", True)
         )
         self.max_joint_delta_deg = float(
-            self._declare_and_get("max_joint_delta_deg", 120.0)
+            self._declare_and_get("max_joint_delta_deg", 100.0)
         )
         self.max_waypoint_jump_deg = float(
-            self._declare_and_get("max_waypoint_jump_deg", 45.0)
+            self._declare_and_get("max_waypoint_jump_deg", 15.0)
         )
         self.max_joint_total_motion_deg = float(
-            self._declare_and_get("max_joint_total_motion_deg", 180.0)
+            self._declare_and_get("max_joint_total_motion_deg", 90.0)
         )
         self.max_trajectory_candidates = int(
             self._declare_and_get("max_trajectory_candidates", 2)

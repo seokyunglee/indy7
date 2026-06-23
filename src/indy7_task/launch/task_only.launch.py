@@ -17,6 +17,7 @@ Indy7 task-only launch file.
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
@@ -46,6 +47,7 @@ def generate_launch_description():
     gripper_open_service = LaunchConfiguration("gripper_open_service")
     gripper_close_service = LaunchConfiguration("gripper_close_service")
     gripper_state_service = LaunchConfiguration("gripper_state_service")
+    launch_interface_node = LaunchConfiguration("launch_interface_node")
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -100,6 +102,10 @@ def generate_launch_description():
         DeclareLaunchArgument(
             "gripper_state_service",
             default_value="/gripper/state",
+        ),
+        DeclareLaunchArgument(
+            "launch_interface_node",
+            default_value="true",
         ),
         Node(
             package="indy7_task",
@@ -162,5 +168,14 @@ def generate_launch_description():
                     "gripper_state_service": gripper_state_service,
                 }
             ],
+        ),
+        Node(
+            package="indy7_task",
+            executable="interface_node",
+            name="indy7_task_interface_node",
+            output="screen",
+            condition=IfCondition(launch_interface_node),
+            emulate_tty=True,
+            parameters=[],
         ),
     ])
